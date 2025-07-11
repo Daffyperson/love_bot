@@ -1,8 +1,0 @@
-app = "daffepersontgbot"
-primary_region = "ams"
-
-[build]
-  dockerfile = "Dockerfile"
-
-[env]
-  NODE_ENV = "production"
