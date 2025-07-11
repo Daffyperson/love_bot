@@ -6,6 +6,7 @@ const path = require('path');
 const { Bot, Keyboard } = require('grammy');
 
 const bot = new Bot(process.env.BOT_TOKEN);
+
 const ADMIN_ID = Number(process.env.ADMIN_ID); // ← только эта строка
 
 
@@ -294,16 +295,12 @@ bot.on('message:text', async (ctx) => {
   try {
     await ctx.reply('✅ Отправляю пост...');
     // Здесь ты можешь изменить, куда отправлять пост (например, в канал или группе)
-    await ctx.reply(text);
+    await bot.api.sendMessage(1189007223, text);
     waitingForPost = false;
   } catch (err) {
     console.error('Ошибка при публикации поста:', err);
     await ctx.reply('❌ Ошибка при отправке поста.');
   }
-});
-
-bot.on('message', async (ctx) => {
-  console.log('ID пользователя:', ctx.from.id);
 });
 
 
