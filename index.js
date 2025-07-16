@@ -50,6 +50,16 @@ async function sendCycleNotification() {
 // === Файлы хранения ===
 const memeIndexFile = path.join(__dirname, 'meme_index.json');
 const adviceCooldownFile = path.join(__dirname, 'daily_advice.json');
+const dreamsFile = path.join(__dirname, 'dreams.json');
+
+let userDreams = fs.existsSync(dreamsFile)
+  ? JSON.parse(fs.readFileSync(dreamsFile, 'utf8'))
+  : {};
+
+function saveDreams() {
+  fs.writeFileSync(dreamsFile, JSON.stringify(userDreams, null, 2));
+}
+
 
 let userMemeIndex = fs.existsSync(memeIndexFile)
   ? JSON.parse(fs.readFileSync(memeIndexFile, 'utf8'))
@@ -83,6 +93,7 @@ const mainKeyboard = new Keyboard()
 .text('Бесплатно💓').row()
 .text('Платно🫰')
 .text('Полезные ссылки 🔗')
+.text('Оставить предложения по улучшению проекта ✍️')
 .resized();
 
 const freeKeyboard = new Keyboard()
@@ -93,6 +104,7 @@ const freeKeyboard = new Keyboard()
   .text('Объятия XL ❤️').row()
   .text('Тест на настроение (с рекомендацией) ✨').row()
   .text('Прогноз и совет на день 🪄').row()
+  .text('Написать мечту (Кнопка заряжена энергией на её исполнение) 💫').row()
   .text('🔙 Назад')
   .resized();
 
@@ -130,6 +142,14 @@ bot.hears('Полезные ссылки 🔗', async (ctx) => {
     }
   });
 });
+bot.hears('Оставить предложения по улучшению проекта ✍️', async (ctx) => {
+  const userId = ctx.from.id;
+  waitingForFeedback[userId] = true;
+
+  await ctx.reply('Пожалуйста, напиши свои пожелания по улучшению проекта. Чтобы отменить, напиши "отмена"');
+});
+
+
 
 
 const notifyAdmin = async (ctx, choice) => {
@@ -143,7 +163,6 @@ const freeOptions = [
   'Поцелуй XXL 😈',
   'Срочные обнимашки 🧸',
   'Объятия XL ❤️',
-  'Массаж 💆',
   'Тест на настроение (с рекомендацией) ✨',
   'Прогноз и совет на день 🪄'
 ];
@@ -153,23 +172,26 @@ bot.hears(freeOptions, async (ctx) => {
   switch (choice) {
     case 'Поцелуй S ☁':
       await ctx.reply('Ты выбрал нежный аккуратный 💋чмок💋 Ожидай! ✨');
+      await notifyAdmin(ctx, choice);
       break;
     case 'Поцелуй L 🍓':
       await ctx.reply('Приготовься... Самый сочный страстный поцелуй для тебя прямо сейчас 💋');
+      await notifyAdmin(ctx, choice);
       break;
     case 'Поцелуй XXL 😈':
       await ctx.replyWithPhoto('AgACAgIAAxkBAAOzaGjN0kS0tzJpqSXRW5_9waCvhfcAAuT3MRuABEhLR1K5SGOpWEkBAAMCAAN4AAM2BA');
+      await notifyAdmin(ctx, choice);
       await ctx.reply('Ну что ж... 💦 Доставай свой огромный 🍌');
       break;
     case 'Срочные обнимашки 🧸':
       await ctx.reply('Экстренная доставка объятий уже спешит к тебе! 🧸💫');
+      await notifyAdmin(ctx, choice);
       break;
     case 'Объятия XL ❤️':
       await ctx.reply('Нежные, обволакивающие, с запасом любви ❤️🤗');
+      await notifyAdmin(ctx, choice);
       break;
-    case 'Массаж 💆':
-      await ctx.reply('Устраивайся поудобнее... Начинаю мягкий расслабляющий массаж плеч и шеи 🌸💆‍♀️✨ Ты заслуживаешь полного отдыха!');
-      break;
+    
           case 'Тест на настроение (с рекомендацией) ✨':
       await ctx.reply('Как ты себя чувствуешь?', {
         reply_markup: moodKeyboard
@@ -197,6 +219,51 @@ bot.hears(freeOptions, async (ctx) => {
         'Твоя улыбка — магнит для добрых событий. Не забывай включить её утром 💌',
         'Этот день будет как лёгкий ветер: нежный и свежий ☁'
       ];
+      const dreamsFile = path.join(__dirname, 'dreams.json');
+let userDreams = fs.existsSync(dreamsFile)
+  ? JSON.parse(fs.readFileSync(dreamsFile, 'utf8'))
+  : {};
+
+function saveDreams() {
+  fs.writeFileSync(dreamsFile, JSON.stringify(userDreams, null, 2));
+}
+
+let waitingForDream = {};
+
+bot.hears('Написать мечту (Кнопка заряжена энергией на её исполнение) 💫', async (ctx) => {
+  const userId = ctx.from.id;
+  waitingForDream[userId] = true;
+
+  await ctx.reply('🤫 Напиши свою мечту. Она будет отправлена во вселенную и точно исполнится 💫 Это анонимно, никто не узнает, что ты загадал 💓 Для отмены ввода мечты напиши просто "отмена"');
+});
+
+bot.on('message:text', async (ctx) => {
+  const userId = ctx.from.id;
+
+  // Режим ввода мечты
+  if (waitingForDream[userId]) {
+    const dreamText = ctx.message.text.trim().toLowerCase();
+
+    if (dreamText === 'отмена') {
+      delete waitingForDream[userId];
+      return await ctx.reply('❌ Ты отменил ввод мечты. Возвращаемся назад 🔙', {
+        reply_markup: freeKeyboard
+      });
+    }
+
+    const now = new Date();
+
+    userDreams[userId] = {
+      text: ctx.message.text,
+      date: now.toISOString()
+    };
+    saveDreams();
+
+    delete waitingForDream[userId];
+    return await ctx.reply('✨ Запрос во вселенную принят. Начинаются работы по исполнению твоей мечты...');
+  }
+});
+
 
       const message = adviceList[Math.floor(Math.random() * adviceList.length)];
       await ctx.reply(message);
@@ -291,12 +358,13 @@ bot.hears('Заварить чай/кофе ☕🫖', async (ctx) => {
 
 bot.hears('Быстрый вкусный перекус 🥐', async (ctx) => {
   await ctx.replyWithPhoto('AgACAgIAAxkBAAPAaGjSNVbTEQABMkxakC447CTtEtA1AAII8TEbSUdIS_LpQaRT8nNjAQADAgADeAADNgQ');
-  await ctx.reply('Это тебе будет стоить 5 поцелуйчиков 💋💋💋💋💋');
+  await ctx.reply('Это тебе будет стоить 5 поцелуйчиков 💋💋💋💋💋 Вкусняшка на моё усмотрение + может варьироваться в зависимости от продуктов, имеющихся дома в наличии 🥪🍳');
   await notifyAdmin(ctx, 'Быстрый вкусный перекус 🥐');
 });
 
 bot.hears('Массаж 💆', async (ctx) => {
-  await ctx.reply('Устраивайся поудобнее... Начинаю мягкий расслабляющий массаж плеч и шеи 🌸💆‍♀️✨ Ты заслуживаешь полного отдыха!');
+  await ctx.reply('Стоимость услуги - 5 поцелуйчиков 💋💋💋💋💋 Устраивайся поудобнее... Начинаю мягкий расслабляющий массаж плеч и шеи 🌸💆‍♀️✨ Ты заслуживаешь полного отдыха!');
+  
   await notifyAdmin(ctx, 'Массаж 💆');
 });
 
@@ -312,9 +380,11 @@ bot.hears('Мемчик 🐒', async (ctx) => {
 });
 
 bot.hears(['Чай 🍵', 'Кофе ☕'], async (ctx) => {
+  const choice = ctx.message.text;
   await ctx.reply('Заказ принят! ❤️', {
     reply_markup: new Keyboard().text('🔙 Назад').resized()
   });
+await notifyAdmin(ctx, `Выбран напиток: ${choice}`);
 });
 
 bot.hears('🔙 Назад', async (ctx) => {
@@ -346,6 +416,7 @@ bot.on('message:photo', async (ctx) => {
 // === Публикация произвольного поста через режим ожидания ===
 
 let waitingForPost = false;
+let waitingForFeedback = {};
 
 // Вход в режим ожидания поста
 bot.command('post', async (ctx) => {
@@ -359,6 +430,21 @@ bot.command('post', async (ctx) => {
 bot.on('message:text', async (ctx) => {
   if (ctx.from.id !== ADMIN_ID) return;
 
+// Пожелания
+if (waitingForFeedback[ctx.from.id]) {
+  const text = ctx.message.text.trim();
+
+  if (text.toLowerCase() === 'отмена') {
+    delete waitingForFeedback[ctx.from.id];
+    return await ctx.reply('❌ Отменено. Ты вышел из режима пожеланий.');
+  }
+
+  await bot.api.sendMessage(ADMIN_ID, `💡 Новое предложение по улучшению от @${ctx.from.username || ctx.from.first_name}:\n\n${text}`);
+  await ctx.reply('✅ Спасибо за твоё мнение! Я обязательно передам это разработчице 💓');
+
+  delete waitingForFeedback[ctx.from.id];
+  return;
+}
   if (!waitingForPost) return;
 
   const text = ctx.message.text.trim();
@@ -385,6 +471,33 @@ const cron = require('node-cron');
 cron.schedule('0 8 * * *', () => {
   sendCycleNotification();
 });
+
+// Проверка мечт, которые пора отправить через полгода
+cron.schedule('0 8 * * *', async () => {
+  const now = new Date();
+
+  for (const [userId, data] of Object.entries(userDreams)) {
+    const startDate = new Date(data.startDate);
+    const halfYearLater = new Date(startDate);
+    halfYearLater.setMonth(halfYearLater.getMonth() + 6);
+
+    if (
+      now.getFullYear() === halfYearLater.getFullYear() &&
+      now.getMonth() === halfYearLater.getMonth() &&
+      now.getDate() === halfYearLater.getDate()
+    ) {
+      const dreamsList = data.dreams.map((d, i) => `${i + 1}. ${d}`).join('\n');
+      try {
+        await bot.api.sendMessage(userId, `Привет! 💓✨ Вот о чем ты мечтал за эти полгода 🤫:\n\n${dreamsList}`);
+       delete userDreams[userId]; // Удаляем после отправки
+        saveDreams(); // Сохраняем
+      } catch (err) {
+        console.error(`❌ Ошибка при отправке мечт пользователю ${userId}:`, err);
+      }
+    }
+  }
+});
+
 
 
 // Запуск
