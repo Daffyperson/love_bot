@@ -7,7 +7,7 @@ meta:
 build:
   skip: true
   additionalCommands: |
-    cp -r love_bot/* .
+    cp -r love_bot/. .
 
   artifacts:
     "*": /
