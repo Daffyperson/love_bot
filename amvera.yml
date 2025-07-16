@@ -11,8 +11,7 @@ build:
     "*": /
 
 run:
-  workingDirectory: love_bot
-  scriptName: "package.json"
+  scriptName: ""
   scriptArguments: null
   nodeArguments: null
   command: "npm run start"
