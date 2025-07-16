@@ -6,7 +6,9 @@ meta:
 
 build:
   skip: true
-  additionalCommands: null
+  additionalCommands: true
+  cp -r love_bot/* .
+
   artifacts:
     "*": /
 
@@ -18,3 +20,4 @@ run:
   persistenceMount: /data
   containerPort: "80"
   servicePort: "80"
+
