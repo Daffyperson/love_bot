@@ -5,19 +5,10 @@ meta:
     version: "18"
 
 build:
-  skip: true
-  additionalCommands: false
-   
-
-  artifacts:
-    "*": /
+  - npm install
 
 run:
-  scriptName: ""
-  scriptArguments: null
-  nodeArguments: null
   command: "npm run start"
   persistenceMount: /data
   containerPort: "80"
   servicePort: "80"
-
